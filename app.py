@@ -17,8 +17,20 @@ if "messages" not in st.session_state:
         }
     ]
 
-if "resistance_level" not in st.session_state:
-    st.session_state.resistance_level = 0
+if "useless_rate" not in st.session_state:
+    st.session_state.useless_rate = random.randint(85, 95)
+
+# ──★ メイン画面の見やすい位置にステータスを表示 ★──
+col1, col2 = st.columns(2)
+with col1:
+    st.metric(
+        label="🧠 迷宮の深さ（無駄度）",
+        value=f"{st.session_state.useless_rate}%",
+    )
+with col2:
+    st.metric(label="❌ 解決された問題", value="0件 (完璧)")
+
+st.divider()
 
 # ユーザーからの入力
 user_input = st.chat_input(
@@ -39,6 +51,11 @@ if user_input:
     # ユーザーの入力をそのまま表示
     st.session_state.messages.append({"role": "user", "content": user_input})
 
+    # メッセージを送るたびに無駄度が少しずつ上がっていく
+    st.session_state.useless_rate = min(
+        99, st.session_state.useless_rate + random.randint(1, 4)
+    )
+
     # あえてユーザーの言葉を否定・脱線させるシステムからの返答
     rebel_response = random.choice(anti_conclusion_phrases)
 
@@ -58,15 +75,10 @@ if user_input:
     st.session_state.messages.append(
         {"role": "assistant", "content": rebel_response}
     )
+    # 再読み込みして数値を即時反映
+    st.rerun()
 
 # チャット履歴の描画
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
-
-# サイドバーに現在の「迷宮の深さ」を表示
-st.sidebar.title("🧠 迷宮のステータス")
-st.sidebar.metric("効率の低さ（無駄度）", f"{random.randint(85, 99)}%")
-st.sidebar.info(
-    "このアプリは、あなたがスッキリすることを全システムを挙げて邪魔します。"
-)
