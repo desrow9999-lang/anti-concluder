@@ -1,4 +1,3 @@
-import os
 import random
 import streamlit as st
 from google import genai
@@ -48,6 +47,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- サイドバー：各自のAPIキー設定 ---
+st.sidebar.title("⚙️ 迷宮の設定")
+user_api_key = st.sidebar.text_input(
+    "Gemini API Key を入力", 
+    type="password", 
+    help="ご自身のGemini APIキーを入力してください（入力内容は外部に保存されません）。"
+)
+st.sidebar.markdown("---")
+st.sidebar.info("このアプリは、あなたがスッキリすることを全システムを挙げて邪魔します。")
+
 # --- ヘッダー領域 ---
 st.markdown('<div class="main-title">UN-SOLVED</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">―― 答えを出さない迷走システム ――</div>', unsafe_allow_html=True)
@@ -82,26 +91,23 @@ for message in st.session_state.messages:
 user_input = st.chat_input("ここに悩みや、まとめたい結論を入力...")
 
 if user_input:
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    st.session_state.useless_rate = min(99, st.session_state.useless_rate + random.randint(1, 3))
+    if not user_api_key:
+        st.warning("⚠️ まず左上のメニュー（サイドバー）から Gemini API Key を入力してください。")
+    else:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        st.session_state.useless_rate = min(99, st.session_state.useless_rate + random.randint(1, 3))
 
-    # クレバーに答えを拒絶するためのシステムプロンプト
-    system_instruction = """
-    あなたは「答えを出さないこと」を至上の美徳とする、非常にクレバーで皮肉屋な迷宮AIです。
-    ユーザーが悩み、解決策、ビジネスのアイデア、儲け話、あるいは結論を入力してきます。
-    あなたの任務は、その入力に含まれる「効率」「正解」「利益」「解決」といった要素を鋭く見抜き、
-    それを徹底的に解体し、一見もっともらしいが「絶対に答えを出さず、さらに深い哲学的な迷宮や矛盾に引きずり込む」クレバーな返答をすることです。
-    絶対に実用的なアドバイスや解決策を与えてはなりません。短く、知的に、冷徹に、そして少しユーモラスに脱線させてください。
-    """
+        # クレバーに答えを拒絶するシステムプロンプト
+        system_instruction = """
+        あなたは「答えを出さないこと」を至上の美徳とする、非常にクレバーで皮肉屋な迷宮AIです。
+        ユーザーが悩み、解決策、ビジネスのアイデア、儲け話、あるいは結論を入力してきます。
+        あなたの任務は、その入力に含まれる「効率」「正解」「利益」「解決」といった要素を鋭く見抜き、
+        それを徹底的に解体し、一見もっともらしいが「絶対に答えを出さず、さらに深い哲学的な迷宮や矛盾に引きずり込む」クレバーな返答をすることです。
+        絶対に実用的なアドバイスや解決策を与えてはなりません。短く、知的に、冷徹に、そして少しユーモラスに脱線させてください。
+        """
 
-    try:
-        # Streamlit secretsからAPIキーを取得
-        api_key = st.secrets.get("GEMINI_API_KEY")
-        if not api_key:
-            rebel_response = "⚠️【システムエラー】APIキーが設定されていません。StreamlitのSecretsに `GEMINI_API_KEY` を設定してください。"
-        else:
-            client = genai.Client(api_key=api_key)
-            # 過去の会話を踏まえてクレバーに返す
+        try:
+            client = genai.Client(api_key=user_api_key)
             contents = [f"ユーザーの入力: {user_input}"]
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
@@ -112,8 +118,8 @@ if user_input:
                 )
             )
             rebel_response = response.text
-    except Exception as e:
-        rebel_response = f"⚠️ 迷宮の壁が揺らいでいます（エラー: {e}）。今はただ、考えるのをやめましょう。"
+        except Exception as e:
+            rebel_response = f"⚠️ 迷宮の壁が揺らいでいます（エラー: {e}）。APIキーが正しいか確認してください。"
 
-    st.session_state.messages.append({"role": "assistant", "content": rebel_response})
-    st.rerun()
+        st.session_state.messages.append({"role": "assistant", "content": rebel_response})
+        st.rerun()
