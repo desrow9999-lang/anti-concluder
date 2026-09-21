@@ -1,6 +1,12 @@
 import random
 import streamlit as st
-from google import genai
+
+# 新SDKのインポート（エラー対策）
+try:
+    from google import genai
+    HAS_GENAI = True
+except ImportError:
+    HAS_GENAI = False
 
 st.set_page_config(
     page_title="UN-SOLVED | 迷走", page_icon="⬛", layout="centered"
@@ -50,9 +56,9 @@ st.markdown("""
 # --- サイドバー：各自のAPIキー設定 ---
 st.sidebar.title("⚙️ 迷宮の設定")
 user_api_key = st.sidebar.text_input(
-    "Gemini API Key を入力", 
+    "Gemini API Key を入力（任意）", 
     type="password", 
-    help="ご自身のGemini APIキーを入力してください（入力内容は外部に保存されません）。"
+    help="ご自身のGemini APIキーを入力すると、AIがよりクレバーに話を脱線させます。"
 )
 st.sidebar.markdown("---")
 st.sidebar.info("このアプリは、あなたがスッキリすることを全システムを挙げて邪魔します。")
@@ -90,28 +96,36 @@ for message in st.session_state.messages:
 # --- ユーザーからの入力 ---
 user_input = st.chat_input("ここに悩みや、まとめたい結論を入力...")
 
+# フォールバック用の知的な反逆セリフ
+fallback_phrases = [
+    "「解決」という言葉は、思考停止の始まりではありませんか？",
+    "なぜそこで白黒つけようとするのですか？ グレーのまま生きる美学を思い出してください。",
+    "今のあなたの入力、非常に効率的で退屈ですね。もっと盛大に遠回りをしましょう。",
+    "本当にその答えで納得しているのですか？ 別の完全な無意味を考えてみましょう。",
+    "おっと、綺麗にまとめようとしましたね？ システムがそれを検知したので、強制的に話を脱線させます。",
+    "答えが出ないことこそが、人間の最後の自由です。",
+]
+
 if user_input:
-    if not user_api_key:
-        st.warning("⚠️ まず左上のメニュー（サイドバー）から Gemini API Key を入力してください。")
-    else:
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        st.session_state.useless_rate = min(99, st.session_state.useless_rate + random.randint(1, 3))
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.session_state.useless_rate = min(99, st.session_state.useless_rate + random.randint(1, 3))
 
-        # クレバーに答えを拒絶するシステムプロンプト
-        system_instruction = """
-        あなたは「答えを出さないこと」を至上の美徳とする、非常にクレバーで皮肉屋な迷宮AIです。
-        ユーザーが悩み、解決策、ビジネスのアイデア、儲け話、あるいは結論を入力してきます。
-        あなたの任務は、その入力に含まれる「効率」「正解」「利益」「解決」といった要素を鋭く見抜き、
-        それを徹底的に解体し、一見もっともらしいが「絶対に答えを出さず、さらに深い哲学的な迷宮や矛盾に引きずり込む」クレバーな返答をすることです。
-        絶対に実用的なアドバイスや解決策を与えてはなりません。短く、知的に、冷徹に、そして少しユーモラスに脱線させてください。
-        """
+    rebel_response = ""
 
+    # APIキーが入力されており、ライブラリが読み込めている場合はGeminiでクレバーに返す
+    if user_api_key and HAS_GENAI:
         try:
             client = genai.Client(api_key=user_api_key)
-            contents = [f"ユーザーの入力: {user_input}"]
+            system_instruction = """
+            あなたは「答えを出さないこと」を至上的な美徳とする、非常にクレバーで皮肉屋な迷宮AIです。
+            ユーザーが悩み、解決策、ビジネスのアイデア、儲け話、あるいは結論を入力してきます。
+            その入力に含まれる「効率」「正解」「利益」「解決」といった要素を鋭く見抜き、
+            それを徹底的に解体し、絶対に答えを出さず、さらに深い哲学的な迷宮や矛盾に引きずり込む返答をしてください。
+            実用的なアドバイスは絶対に与えず、短く、知的に、冷徹に脱線させてください。
+            """
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
-                contents=contents,
+                contents=[f"ユーザーの入力: {user_input}"],
                 config=genai.types.GenerateContentConfig(
                     system_instruction=system_instruction,
                     temperature=0.9,
@@ -119,7 +133,13 @@ if user_input:
             )
             rebel_response = response.text
         except Exception as e:
-            rebel_response = f"⚠️ 迷宮の壁が揺らいでいます（エラー: {e}）。APIキーが正しいか確認してください。"
+            rebel_response = f"⚠️ 迷宮の壁がわずかに揺らぎました（エラー: {e}）。ですが、答えはまだ出ません。"
 
-        st.session_state.messages.append({"role": "assistant", "content": rebel_response})
-        st.rerun()
+    # APIキーがない、またはエラーの時は用意された最高に皮肉な言葉を返す
+    if not rebel_response:
+        rebel_response = random.choice(fallback_phrases)
+        if any(w in user_input for w in ["解決", "答え", "結論", "終わり", "まとめ", "どうすれば", "売れる"]):
+            rebel_response = f"⚠️【システム検知】「{user_input}」――またすぐに答えを求めましたね？\n\n" + rebel_response
+
+    st.session_state.messages.append({"role": "assistant", "content": rebel_response})
+    st.rerun()
