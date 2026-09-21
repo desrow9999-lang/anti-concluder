@@ -50,10 +50,26 @@ st.markdown("""
         color: #FF4B4B !important;
         font-weight: 700;
     }
+    .apeiron-box {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2b2b2b 100%);
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        margin-top: 20px;
+    }
+    .apeiron-box a {
+        color: #FF4B4B;
+        text-decoration: none;
+        font-weight: 700;
+    }
+    .apeiron-box a:hover {
+        text-decoration: underline;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- サイドバー：各自のAPIキー設定 ---
+# --- サイドバー：各自のAPIキー設定 ＆ 導線 ---
 st.sidebar.title("⚙️ 迷宮の設定")
 user_api_key = st.sidebar.text_input(
     "Gemini API Key を入力（任意）", 
@@ -62,6 +78,22 @@ user_api_key = st.sidebar.text_input(
 )
 st.sidebar.markdown("---")
 st.sidebar.info("このアプリは、あなたがスッキリすることを全システムを挙げて邪魔します。")
+
+# --- 有料note（Apeiron）への導線 ---
+st.sidebar.markdown("### 🧠 さらに深く思考する")
+st.sidebar.markdown(
+    """
+    <div class="apeiron-box">
+        <p style="font-size: 0.85rem; color: #ccc; margin-bottom: 8px;">
+            ただの迷走では物足りないあなたへ。<br>逃げ場なく本質を突くソクラテス式AI。
+        </p>
+        <a href="https://note.com/agile_lemur2260/n/n5deca535824d" target="_blank">
+            👉 『Apeiron』の詳細を見る
+        </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 # --- ヘッダー領域 ---
 st.markdown('<div class="main-title">UN-SOLVED</div>', unsafe_allow_html=True)
