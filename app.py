@@ -175,3 +175,13 @@ if user_input:
 
     st.session_state.messages.append({"role": "assistant", "content": rebel_response})
     st.rerun()
+# --- フッター広告 ---
+ad_code = """
+<div style="text-align: center;">
+    <a href="https://px.a8.net/svt/ejp?a8mat=4BE70S+8C2HO2+55QO+5ZEMP" rel="nofollow">
+    <img border="0" style="max-width: 100%; height: auto;" alt="" src="https://www27.a8.net/svt/bgt?aid=261002764504&wid=001&eno=01&mid=s00000024072001005000&mc=1"></a>
+    <img border="0" width="1" height="1" src="https://www17.a8.net/0.gif?a8mat=4BE70S+8C2HO2+55QO+5ZEMP" alt="">
+</div>
+"""
+st.markdown("---")
+components.html(ad_code, height=70)
